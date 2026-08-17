@@ -335,7 +335,6 @@ func ListNexusKeysHandler(c *gin.Context) {
 			"id":          k.ID,
 			"name":        k.Name,
 			"key":         masked,
-			"key_full":    k.Key,
 			"pool":        k.Pool,
 			"status":      k.Status,
 			"total_calls": k.TotalCalls,
