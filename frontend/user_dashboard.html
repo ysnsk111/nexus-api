@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusAPI — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        :root { --bg:#080e1a; --sidebar:#0c1628; --surface2:rgba(22,35,58,0.6); --border:rgba(148,163,184,0.1); --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --success:#10b981; --danger:#ef4444; --warning:#f59e0b; }
+        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); display:flex; min-height:100vh; font-size:0.875rem; }
+        .sidebar { width:240px; flex-shrink:0; background:var(--sidebar); border-right:1px solid var(--border); display:flex; flex-direction:column; padding:1.25rem 0.75rem; position:sticky; top:0; height:100vh; overflow-y:auto; }
+        .brand { padding:0.25rem 0.5rem 1.5rem; font-size:1.1rem; font-weight:700; letter-spacing:-0.02em; }
+        .brand em { color:var(--accent); font-style:normal; }
+        .nav-link { display:flex; align-items:center; gap:0.6rem; padding:0.6rem 0.75rem; color:var(--muted); text-decoration:none; border-radius:8px; font-weight:500; font-size:0.82rem; transition:all 0.15s; cursor:pointer; border:none; background:none; width:100%; text-align:left; }
+        .nav-link:hover { background:rgba(56,189,248,0.07); color:var(--text); }
+        .nav-link.active { background:rgba(56,189,248,0.12); color:var(--accent); }
+        .nav-link svg { width:16px; height:16px; flex-shrink:0; }
+        .nav-bottom { margin-top:auto; }
+        .lang-select { width:100%; padding:0.5rem 0.75rem; background:rgba(8,14,26,0.6); border:1px solid var(--border); border-radius:8px; color:var(--muted); font-size:0.78rem; font-family:inherit; outline:none; margin-top:0.75rem; cursor:pointer; }
+        .main { flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden; }
+        .topbar { display:flex; align-items:center; justify-content:space-between; padding:1rem 1.5rem; border-bottom:1px solid var(--border); background:rgba(8,14,26,0.5); backdrop-filter:blur(8px); position:sticky; top:0; z-index:10; }
+        .topbar-title { font-size:1rem; font-weight:600; }
+        .topbar-right { display:flex; align-items:center; gap:0.75rem; }
+        .token-pill { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); color:#6ee7b7; padding:0.2rem 0.6rem; border-radius:99px; font-size:0.75rem; font-weight:600; }
+        .content { padding:1.5rem; overflow-y:auto; flex:1; }
+        .announce-banner { background:rgba(56,189,248,0.07); border-left:3px solid var(--accent); padding:0.75rem 1rem; border-radius:0 8px 8px 0; font-size:0.82rem; color:#93c5fd; margin-bottom:1.25rem; display:none; }
+        .tab-pane { display:none; }
+        .tab-pane.active { display:block; }
+        .card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:1.25rem; margin-bottom:1.25rem; }
+        .card-title { font-size:0.72rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:1rem; }
+        .toolbar { display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap; align-items:center; }
+        .table-wrap { overflow-x:auto; }
+        table { width:100%; border-collapse:collapse; white-space:nowrap; }
+        th { padding:0.5rem 0.75rem; font-size:0.7rem; color:#64748b; font-weight:600; text-align:left; text-transform:uppercase; letter-spacing:0.05em; border-bottom:1px solid var(--border); }
+        td { padding:0.65rem 0.75rem; font-size:0.82rem; color:#cbd5e1; border-bottom:1px solid rgba(148,163,184,0.06); }
+        tr:hover td { background:rgba(56,189,248,0.03); }
+        tr:last-child td { border-bottom:none; }
+        input[type=text], input[type=email], input[type=number], input[type=password], input[type=url], select, textarea { padding:0.55rem 0.8rem; background:rgba(8,14,26,0.7); border:1px solid rgba(148,163,184,0.18); border-radius:7px; color:var(--text); font-size:0.82rem; font-family:inherit; outline:none; transition:border-color 0.2s; }
+        input:focus, select:focus { border-color:var(--accent); }
+        .btn { padding:0.55rem 1rem; border:none; border-radius:7px; font-size:0.82rem; font-weight:500; font-family:inherit; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:0.4rem; }
+        .btn-primary { background:linear-gradient(135deg,#0ea5e9,#2563eb); color:white; }
+        .btn-primary:hover { box-shadow:0 4px 14px rgba(14,165,233,0.35); transform:translateY(-1px); }
+        .btn-danger { background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.2); }
+        .btn-ghost { background:rgba(148,163,184,0.08); color:var(--muted); border:1px solid var(--border); }
+        .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+        .btn-sm { padding:0.3rem 0.65rem; font-size:0.75rem; }
+        .badge { display:inline-block; padding:0.15rem 0.5rem; border-radius:99px; font-size:0.7rem; font-weight:600; }
+        .badge-active { background:rgba(16,185,129,0.12); color:#34d399; border:1px solid rgba(16,185,129,0.2); }
+        .badge-disabled { background:rgba(148,163,184,0.1); color:#94a3b8; border:1px solid var(--border); }
+        .quota-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:0.75rem; margin-bottom:1.25rem; }
+        .quota-card { background:rgba(8,14,26,0.5); border:1px solid var(--border); border-radius:10px; padding:0.875rem; }
+        .quota-label { font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.3rem; }
+        .quota-value { font-size:1.25rem; font-weight:700; letter-spacing:-0.02em; }
+        .quota-sub { font-size:0.7rem; color:var(--muted); margin-top:0.2rem; }
+        .progress-bar { height:3px; background:rgba(148,163,184,0.1); border-radius:99px; overflow:hidden; margin-top:0.4rem; }
+        .progress-fill { height:100%; border-radius:99px; transition:width 0.4s; }
+        .pf-low { background:var(--success); } .pf-mid { background:var(--warning); } .pf-high { background:var(--danger); }
+        .key-mono { font-family:'Courier New',monospace; font-size:0.78rem; color:#7dd3fc; }
+        .copy-btn { background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.75rem; padding:0.1rem 0.3rem; transition:color 0.15s; }
+        .copy-btn:hover { color:var(--accent); }
+        .endpoint-info { background:rgba(8,14,26,0.7); border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; }
+        .endpoint-row { display:flex; align-items:center; justify-content:space-between; gap:0.5rem; margin-bottom:0.75rem; flex-wrap:wrap; }
+        .endpoint-label { font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.3rem; }
+        .endpoint-url { font-family:monospace; font-size:0.8rem; color:var(--accent); word-break:break-all; }
+        .model-list { display:flex; flex-wrap:wrap; gap:0.4rem; margin-top:0.5rem; }
+        .model-chip { padding:0.2rem 0.55rem; background:rgba(56,189,248,0.07); border:1px solid rgba(56,189,248,0.15); border-radius:99px; font-size:0.72rem; color:var(--accent); }
+        .model-chip.easter { background:rgba(249,115,22,0.08); border-color:rgba(249,115,22,0.2); color:#fb923c; }
+        .empty-state { text-align:center; padding:2rem; color:var(--muted); font-size:0.82rem; }
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:100; display:flex; align-items:center; justify-content:center; padding:1rem; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+        .modal-overlay.open { opacity:1; pointer-events:all; }
+        .modal { background:#0f1e36; border:1px solid var(--border); border-radius:14px; padding:1.75rem; width:100%; max-width:500px; transform:scale(0.96); transition:transform 0.2s; }
+        .modal-overlay.open .modal { transform:scale(1); }
+        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem; }
+        .modal-title { font-size:1rem; font-weight:600; }
+        .modal-close { background:none; border:none; color:var(--muted); font-size:1.25rem; cursor:pointer; line-height:1; }
+        .form-group { margin-bottom:0.875rem; }
+        .form-label { display:block; font-size:0.78rem; color:var(--muted); margin-bottom:0.35rem; font-weight:500; }
+        .form-control { width:100%; }
+        .modal-actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1.25rem; }
+        .key-reveal { font-family:monospace; font-size:0.75rem; background:rgba(8,14,26,0.8); padding:0.6rem 0.8rem; border-radius:8px; color:var(--success); word-break:break-all; border:1px solid rgba(16,185,129,0.2); margin:0.5rem 0; }
+    
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: -260px; z-index: 1000; transition: left 0.3s; height: 100vh; }
+            .sidebar.open { left: 0; }
+            .mobile-menu-btn { display: inline-flex !important; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; margin-right: 12px; }
+            .topbar { padding: 1rem; }
+            .content { padding: 1rem; }
+            .form-row, .quota-grid { grid-template-columns: 1fr; }
+            .brand { padding-top: 0.5rem; }
+        }
+        .mobile-menu-btn { display: none; }
+        .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); z-index: 999; opacity: 0; transition: opacity 0.3s; }
+        .mobile-overlay.open { display: block; opacity: 1; }
+
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <div class="brand">Nexus<em>API</em></div>
+    <button class="nav-link active" id="nav_dashboard" onclick="showTab('dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span id="t_dashboard">Dashboard</span>
+    </button>
+    <button class="nav-link" id="nav_nexuskeys" onclick="showTab('nexuskeys')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span id="t_mykeys">My API Keys</span>
+    </button>
+    <button class="nav-link" id="nav_upstream" onclick="showTab('upstream')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <span id="t_upstream">Private Pool</span>
+    </button>
+    <button class="nav-link" id="nav_usage" onclick="showTab('usage')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span id="t_usage">Usage</span>
+    </button>
+    <button class="nav-link" id="nav_endpoint" onclick="showTab('endpoint')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span id="t_endpoint">API Endpoint</span>
+    </button>
+    <div class="nav-bottom">
+        <button class="nav-link" onclick="window.location.href = BASE_PATH + '/user/settings'">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span id="t_settings">Settings</span>
+        </button>
+        <button class="nav-link" style="color:#fca5a5" onclick="logout()">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span id="t_logout">Logout</span>
+        </button>
+        <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
+            <option value="en">English</option><option value="zh">中文</option>
+            <option value="ja">日本語</option><option value="ru">Русский</option>
+            <option value="ko">한국어</option><option value="fr">Français</option>
+            <option value="es">Español</option>
+        </select>
+    </div>
+</nav>
+
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+<div class="main">
+    <div class="topbar">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">≡</button>
+        <div class="topbar-title">
+            <span id="t_welcome">Welcome,</span> <span id="usernameDisplay" style="color:var(--accent)">—</span>
+        </div>
+        <div class="topbar-right">
+            <span class="token-pill">⬡ <span id="tokenDisplay">—</span> / <span id="tokenTotal">—</span></span>
+        </div>
+    </div>
+    <div class="content">
+        <div class="announce-banner" id="annoBanner"></div>
+
+        <!-- Dashboard Tab -->
+        <div class="tab-pane active" id="tab_dashboard">
+            <div class="quota-grid" id="quotaGrid">
+                <div class="quota-card"><div class="quota-label" id="ql_total">Total</div><div class="quota-value" id="qv_total">—</div><div class="quota-sub" id="qs_total">—</div></div>
+                <div class="quota-card"><div class="quota-label" id="ql_weekly">Weekly</div><div class="quota-value" id="qv_weekly">—</div><div class="quota-sub" id="qs_weekly">—</div></div>
+                <div class="quota-card"><div class="quota-label" id="ql_monthly">Monthly</div><div class="quota-value" id="qv_monthly">—</div><div class="quota-sub" id="qs_monthly">—</div></div>
+                <div class="quota-card"><div class="quota-label" id="ql_5h">5-Hour</div><div class="quota-value" id="qv_5h">—</div><div class="quota-sub" id="qs_5h">—</div></div>
+            </div>
+            <div class="card">
+                <div class="card-title" id="ct_recent_usage">Recent Usage by Model</div>
+                <div class="table-wrap">
+                    <table><thead><tr><th id="th_model">Model</th><th id="th_provider">Provider</th><th id="th_calls">Calls</th><th id="th_tokens">Tokens</th></tr></thead>
+                    <tbody id="statsTable"></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- My NexusKeys Tab -->
+        <div class="tab-pane" id="tab_nexuskeys">
+            <div class="toolbar">
+                <input type="text" id="keyName" placeholder="Key name..." style="min-width:160px">
+                <select id="keyPool"><option value="global" id="opt_global">Global Pool</option><option value="private" id="opt_private">Private Pool</option></select>
+                <button class="btn btn-primary" onclick="createNexusKey()" id="btn_create_key">Create Key</button>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>ID</th><th id="th_k_name">Name</th><th id="th_k_key">Key</th><th id="th_k_pool">Pool</th><th id="th_k_status">Status</th><th id="th_k_calls">Calls</th><th id="th_k_action">Action</th></tr></thead>
+                        <tbody id="nexusKeysTable"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="newKeyReveal" style="display:none" class="card">
+                <div class="card-title">Your new API key (copy it now — shown once)</div>
+                <div class="key-reveal" id="newKeyValue"></div>
+                <button class="btn btn-ghost btn-sm" onclick="copyText(document.getElementById('newKeyValue').textContent)">Copy</button>
+            </div>
+        </div>
+
+        <!-- Private Upstream Keys Tab -->
+        <div class="tab-pane" id="tab_upstream">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="openModal('addUpstreamModal')" id="btn_add_upstream">Add Upstream Key</button>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>ID</th><th id="th_u_name">Name</th><th id="th_u_provider">Provider</th><th id="th_u_url">Base URL</th><th id="th_u_status">Status</th><th id="th_u_calls">Calls</th><th id="th_u_action">Action</th></tr></thead>
+                        <tbody id="upstreamTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Tab -->
+        <div class="tab-pane" id="tab_usage">
+            <div class="quota-grid" id="quotaGrid2"></div>
+            <div class="card">
+                <div class="card-title" id="ct_usage">Usage Statistics</div>
+                <div class="table-wrap">
+                    <table><thead><tr><th id="th_um">Model</th><th id="th_up">Provider</th><th id="th_uc">Calls</th><th id="th_ut">Tokens</th></tr></thead>
+                    <tbody id="usageTable"></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoint Tab -->
+        <div class="tab-pane" id="tab_endpoint">
+            <div class="card">
+                <div class="card-title" id="ct_endpoint">API Endpoint Information</div>
+                <div class="endpoint-info">
+                    <div class="endpoint-label" id="el_base">Base URL</div>
+                    <div class="endpoint-url" id="endpointURL">—</div>
+                    <div style="margin-top:1rem">
+                        <div class="endpoint-label">Chat Completions</div>
+                        <div class="endpoint-url" id="chatEndpoint">—</div>
+                    </div>
+                    <div style="margin-top:1rem">
+                        <div class="endpoint-label">Models List</div>
+                        <div class="endpoint-url" id="modelsEndpoint">—</div>
+                    </div>
+                    <div style="margin-top:1rem">
+                        <div class="endpoint-label" id="el_auth">Authorization</div>
+                        <div style="font-size:0.8rem;color:var(--muted);margin-top:0.25rem" id="auth_hint">Use your NexusKey as Bearer token: <code style="color:var(--accent)">Authorization: Bearer sk-nexus-...</code></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title" id="ct_models">Available Models</div>
+                <div class="model-list" id="modelList">
+                    <span style="color:var(--muted);font-size:0.8rem">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Upstream Key Modal -->
+<div class="modal-overlay" id="addUpstreamModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div class="modal-title" id="t_add_upstream_title">Add Private Upstream Key</div>
+            <button class="modal-close" onclick="closeModal('addUpstreamModal')">✕</button>
+        </div>
+        <div class="form-group">
+            <label class="form-label" id="lb_up_name">Display Name *</label>
+            <input type="text" id="up_name" class="form-control" placeholder="My Claude Key">
+        </div>
+        <div class="form-group">
+            <label class="form-label" id="lb_up_provider">Provider *</label>
+            <select id="up_provider" class="form-control">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic</option>
+                <option value="gemini">Gemini</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label" id="lb_up_key">API Key *</label>
+            <input type="text" id="up_key" class="form-control" placeholder="sk-...">
+        </div>
+        <div class="form-group">
+            <label class="form-label" id="lb_up_url">Base URL (optional)</label>
+            <input type="url" id="up_base_url" class="form-control" placeholder="https://api.openai.com">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-ghost btn-sm" onclick="closeModal('addUpstreamModal')">Cancel</button>
+            <button class="btn btn-primary btn-sm" onclick="addUpstreamKey()" id="btn_save_upstream">Add Key</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BASE_PATH = window.location.pathname.replace(/\/(admin(\/settings)?|dashboard|user(\/settings)?)\/?$/, '').replace(/\/$/, '') || '';
+const token = localStorage.getItem('token');
+if (!token) window.location.href = BASE_PATH + '/';
+let LANG = localStorage.getItem('lang') || 'en';
+let userInfo = null;
+let allNexusKeys = [], allUpstreamKeys = [];
+
+const I18N = {
+    en: { t_dashboard:'Dashboard', t_mykeys:'My API Keys', t_upstream:'Private Pool', t_usage:'Usage', t_endpoint:'API Endpoint', t_settings:'Settings', t_logout:'Logout', t_welcome:'Welcome,', ql_total:'Total Quota', ql_weekly:'Weekly Limit', ql_monthly:'Monthly Limit', ql_5h:'5-Hour Limit', ct_recent_usage:'Usage by Model', th_model:'Model', th_provider:'Provider', th_calls:'Calls', th_tokens:'Tokens', th_k_name:'Name', th_k_key:'Key', th_k_pool:'Pool', th_k_status:'Status', th_k_calls:'Calls', th_k_action:'Action', btn_create_key:'Create Key', opt_global:'Global Pool', opt_private:'Private Pool', th_u_name:'Name', th_u_provider:'Provider', th_u_url:'Base URL', th_u_status:'Status', th_u_calls:'Calls', th_u_action:'Action', btn_add_upstream:'Add Upstream Key', ct_endpoint:'API Endpoint Information', el_base:'Base URL', el_auth:'Authorization', auth_hint:'Use your NexusKey as Bearer token:', ct_models:'Available Models', ct_usage:'Usage Statistics', th_um:'Model', th_up:'Provider', th_uc:'Calls', th_ut:'Tokens', lb_up_name:'Display Name *', lb_up_provider:'Provider *', lb_up_key:'API Key *', lb_up_url:'Base URL (optional)', btn_save_upstream:'Add Key', t_add_upstream_title:'Add Private Upstream Key' },
+    zh: { t_dashboard:'概览', t_mykeys:'我的 API 密钥', t_upstream:'私有密钥池', t_usage:'使用量', t_endpoint:'API 端点', t_settings:'设置', t_logout:'退出', t_welcome:'你好，', ql_total:'总配额', ql_weekly:'每周限额', ql_monthly:'每月限额', ql_5h:'5小时限额', ct_recent_usage:'按模型用量', th_model:'模型', th_provider:'供应商', th_calls:'调用数', th_tokens:'Token', th_k_name:'名称', th_k_key:'密钥', th_k_pool:'池', th_k_status:'状态', th_k_calls:'调用数', th_k_action:'操作', btn_create_key:'创建密钥', opt_global:'全局池', opt_private:'私有池', th_u_name:'名称', th_u_provider:'供应商', th_u_url:'基础 URL', th_u_status:'状态', th_u_calls:'调用数', th_u_action:'操作', btn_add_upstream:'添加上游密钥', ct_endpoint:'API 端点信息', el_base:'基础 URL', el_auth:'认证方式', auth_hint:'使用 NexusKey 作为 Bearer token：', ct_models:'可用模型', ct_usage:'使用统计', th_um:'模型', th_up:'供应商', th_uc:'调用数', th_ut:'Token', lb_up_name:'显示名称 *', lb_up_provider:'供应商 *', lb_up_key:'API 密钥 *', lb_up_url:'基础 URL（可选）', btn_save_upstream:'添加密钥', t_add_upstream_title:'添加私有上游密钥' },
+    ja: { t_dashboard:'ダッシュボード', t_mykeys:'APIキー', t_upstream:'プライベートプール', t_usage:'使用量', t_endpoint:'エンドポイント', t_settings:'設定', t_logout:'ログアウト', t_welcome:'ようこそ、', ql_total:'総クォータ', ql_weekly:'週次上限', ql_monthly:'月次上限', ql_5h:'5時間上限', ct_recent_usage:'モデル別使用量', th_model:'モデル', th_provider:'プロバイダー', th_calls:'呼び出し', th_tokens:'トークン', th_k_name:'名前', th_k_key:'キー', th_k_pool:'プール', th_k_status:'状態', th_k_calls:'呼び出し', th_k_action:'操作', btn_create_key:'作成', opt_global:'グローバルプール', opt_private:'プライベートプール', th_u_name:'名前', th_u_provider:'プロバイダー', th_u_url:'ベースURL', th_u_status:'状態', th_u_calls:'呼び出し', th_u_action:'操作', btn_add_upstream:'キー追加', ct_endpoint:'APIエンドポイント', el_base:'ベースURL', el_auth:'認証', auth_hint:'NexusKeyをBearerトークンとして使用：', ct_models:'利用可能モデル', ct_usage:'使用統計', th_um:'モデル', th_up:'プロバイダー', th_uc:'呼び出し', th_ut:'トークン', lb_up_name:'表示名 *', lb_up_provider:'プロバイダー *', lb_up_key:'APIキー *', lb_up_url:'ベースURL（任意）', btn_save_upstream:'追加', t_add_upstream_title:'プライベートキー追加' },
+    ru: { t_dashboard:'Обзор', t_mykeys:'Мои API ключи', t_upstream:'Приватный пул', t_usage:'Использование', t_endpoint:'API Endpoint', t_settings:'Настройки', t_logout:'Выйти', t_welcome:'Добро пожаловать,', ql_total:'Общая квота', ql_weekly:'Недельный лимит', ql_monthly:'Месячный лимит', ql_5h:'5-часовой лимит', ct_recent_usage:'Использование по моделям', th_model:'Модель', th_provider:'Провайдер', th_calls:'Запросы', th_tokens:'Токены', th_k_name:'Имя', th_k_key:'Ключ', th_k_pool:'Пул', th_k_status:'Статус', th_k_calls:'Запросы', th_k_action:'Действие', btn_create_key:'Создать ключ', opt_global:'Общий пул', opt_private:'Приватный пул', th_u_name:'Имя', th_u_provider:'Провайдер', th_u_url:'Базовый URL', th_u_status:'Статус', th_u_calls:'Запросы', th_u_action:'Действие', btn_add_upstream:'Добавить ключ', ct_endpoint:'API Endpoint', el_base:'Базовый URL', el_auth:'Аутентификация', auth_hint:'Используйте NexusKey как Bearer токен:', ct_models:'Доступные модели', ct_usage:'Статистика', th_um:'Модель', th_up:'Провайдер', th_uc:'Запросы', th_ut:'Токены', lb_up_name:'Название *', lb_up_provider:'Провайдер *', lb_up_key:'API ключ *', lb_up_url:'Базовый URL (необяз.)', btn_save_upstream:'Добавить', t_add_upstream_title:'Добавить ключ' },
+    ko: { t_dashboard:'대시보드', t_mykeys:'내 API 키', t_upstream:'프라이빗 풀', t_usage:'사용량', t_endpoint:'API 엔드포인트', t_settings:'설정', t_logout:'로그아웃', t_welcome:'환영합니다,', ql_total:'총 한도', ql_weekly:'주간 한도', ql_monthly:'월간 한도', ql_5h:'5시간 한도', ct_recent_usage:'모델별 사용량', th_model:'모델', th_provider:'공급자', th_calls:'호출', th_tokens:'토큰', th_k_name:'이름', th_k_key:'키', th_k_pool:'풀', th_k_status:'상태', th_k_calls:'호출', th_k_action:'작업', btn_create_key:'키 생성', opt_global:'글로벌 풀', opt_private:'프라이빗 풀', th_u_name:'이름', th_u_provider:'공급자', th_u_url:'기본 URL', th_u_status:'상태', th_u_calls:'호출', th_u_action:'작업', btn_add_upstream:'키 추가', ct_endpoint:'API 엔드포인트 정보', el_base:'기본 URL', el_auth:'인증', auth_hint:'NexusKey를 Bearer 토큰으로 사용:', ct_models:'사용 가능한 모델', ct_usage:'사용 통계', th_um:'모델', th_up:'공급자', th_uc:'호출', th_ut:'토큰', lb_up_name:'표시명 *', lb_up_provider:'공급자 *', lb_up_key:'API 키 *', lb_up_url:'기본 URL (선택)', btn_save_upstream:'키 추가', t_add_upstream_title:'프라이빗 키 추가' },
+    fr: { t_dashboard:'Tableau de bord', t_mykeys:'Mes clés API', t_upstream:'Pool privé', t_usage:'Utilisation', t_endpoint:'Endpoint API', t_settings:'Paramètres', t_logout:'Déconnexion', t_welcome:'Bienvenue,', ql_total:'Quota total', ql_weekly:'Limite hebdo', ql_monthly:'Limite mensuelle', ql_5h:'Limite 5h', ct_recent_usage:'Utilisation par modèle', th_model:'Modèle', th_provider:'Fournisseur', th_calls:'Appels', th_tokens:'Tokens', th_k_name:'Nom', th_k_key:'Clé', th_k_pool:'Pool', th_k_status:'Statut', th_k_calls:'Appels', th_k_action:'Action', btn_create_key:'Créer une clé', opt_global:'Pool global', opt_private:'Pool privé', th_u_name:'Nom', th_u_provider:'Fournisseur', th_u_url:'URL de base', th_u_status:'Statut', th_u_calls:'Appels', th_u_action:'Action', btn_add_upstream:'Ajouter une clé', ct_endpoint:'Informations Endpoint', el_base:'URL de base', el_auth:'Authentification', auth_hint:'Utilisez votre NexusKey comme token Bearer :', ct_models:'Modèles disponibles', ct_usage:'Statistiques', th_um:'Modèle', th_up:'Fournisseur', th_uc:'Appels', th_ut:'Tokens', lb_up_name:'Nom affiché *', lb_up_provider:'Fournisseur *', lb_up_key:'Clé API *', lb_up_url:'URL de base (optionnel)', btn_save_upstream:'Ajouter', t_add_upstream_title:'Ajouter une clé privée' },
+    es: { t_dashboard:'Panel', t_mykeys:'Mis claves API', t_upstream:'Pool privado', t_usage:'Uso', t_endpoint:'Endpoint API', t_settings:'Configuración', t_logout:'Cerrar sesión', t_welcome:'Bienvenido,', ql_total:'Cuota total', ql_weekly:'Límite semanal', ql_monthly:'Límite mensual', ql_5h:'Límite de 5h', ct_recent_usage:'Uso por modelo', th_model:'Modelo', th_provider:'Proveedor', th_calls:'Llamadas', th_tokens:'Tokens', th_k_name:'Nombre', th_k_key:'Clave', th_k_pool:'Pool', th_k_status:'Estado', th_k_calls:'Llamadas', th_k_action:'Acción', btn_create_key:'Crear clave', opt_global:'Pool global', opt_private:'Pool privado', th_u_name:'Nombre', th_u_provider:'Proveedor', th_u_url:'URL base', th_u_status:'Estado', th_u_calls:'Llamadas', th_u_action:'Acción', btn_add_upstream:'Añadir clave', ct_endpoint:'Información del Endpoint', el_base:'URL base', el_auth:'Autenticación', auth_hint:'Usa tu NexusKey como token Bearer:', ct_models:'Modelos disponibles', ct_usage:'Estadísticas de uso', th_um:'Modelo', th_up:'Proveedor', th_uc:'Llamadas', th_ut:'Tokens', lb_up_name:'Nombre *', lb_up_provider:'Proveedor *', lb_up_key:'Clave API *', lb_up_url:'URL base (opcional)', btn_save_upstream:'Añadir', t_add_upstream_title:'Añadir clave privada' }
+};
+function t(k) { return (I18N[LANG]&&I18N[LANG][k])||I18N.en[k]||k; }
+function setLang(l) { LANG=l; localStorage.setItem('lang',l); applyLang(); }
+function applyLang() {
+    Object.keys(I18N.en).forEach(k => { const el=document.getElementById(k); if(el) el.textContent=t(k); });
+    document.getElementById('langSelect').value=LANG;
+}
+
+function showTab(name) {
+    document.querySelectorAll('.tab-pane').forEach(el=>el.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(el=>el.classList.remove('active'));
+    document.getElementById('tab_'+name).classList.add('active');
+    document.getElementById('nav_'+name).classList.add('active');
+    if (name==='nexuskeys') loadNexusKeys();
+    if (name==='upstream') loadUpstream();
+    if (name==='usage') loadUsage();
+    if (name==='endpoint') loadEndpoint();
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => el.addEventListener('click', e => { if(e.target===el) closeModal(el.id); }));
+
+async function apiCall(path, opts={}) {
+    const res = await fetch(BASE_PATH + '/api'+path, { ...opts, headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+token, ...(opts.headers||{}) } });
+    if (res.status===401) { logout(); return null; }
+    return res;
+}
+
+function fmt(n) { if(n===null||n===undefined) return '—'; if(n<0) return '∞'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return String(n); }
+
+function statusBadge(s) {
+    return `<span class="badge badge-${s}">${s}</span>`;
+}
+
+function quotaCard(label, used, limit) {
+    const pct = limit>0 ? Math.min(100, used/limit*100) : 0;
+    const cls = pct>85?'pf-high':pct>60?'pf-mid':'pf-low';
+    return `<div class="quota-card">
+        <div class="quota-label">${label}</div>
+        <div class="quota-value">${fmt(used)}</div>
+        <div class="quota-sub">/ ${fmt(limit)}</div>
+        ${limit>0?`<div class="progress-bar"><div class="progress-fill ${cls}" style="width:${pct}%"></div></div>`:''}
+    </div>`;
+}
+
+async function loadUserInfo() {
+    const res = await apiCall('/user/info');
+    if (!res||!res.ok) return;
+    userInfo = await res.json();
+    document.getElementById('usernameDisplay').textContent = userInfo.username;
+    document.getElementById('tokenDisplay').textContent = fmt(userInfo.tokens_used);
+    document.getElementById('tokenTotal').textContent = fmt(userInfo.tokens_total);
+
+    const qg = document.getElementById('quotaGrid');
+    qg.innerHTML = [
+        quotaCard(t('ql_total'), userInfo.tokens_used, userInfo.tokens_total),
+        quotaCard(t('ql_weekly'), userInfo.tokens_week_used, userInfo.tokens_weekly),
+        quotaCard(t('ql_monthly'), userInfo.tokens_month_used, userInfo.tokens_monthly),
+        quotaCard(t('ql_5h'), userInfo.tokens_5h_used, userInfo.tokens_5h)
+    ].join('');
+}
+
+async function loadStats() {
+    const res = await apiCall('/user/stats');
+    if (!res||!res.ok) return;
+    const data = await res.json() || [];
+    const tb = document.getElementById('statsTable');
+    tb.innerHTML = data.length ? data.map(s =>
+        `<tr><td>${s.model}</td><td>${s.provider||'—'}</td><td>${fmt(s.total_calls)}</td><td>${fmt(s.total_tokens)}</td></tr>`
+    ).join('') : '<tr><td colspan="4" class="empty-state">No usage data yet</td></tr>';
+}
+
+async function loadNexusKeys() {
+    const res = await apiCall('/user/keys');
+    if (!res||!res.ok) return;
+    allNexusKeys = await res.json() || [];
+    const tb = document.getElementById('nexusKeysTable');
+    tb.innerHTML = allNexusKeys.length ? allNexusKeys.map(k =>
+        `<tr>
+            <td>${k.id}</td>
+            <td>${k.name||'—'}</td>
+            <td class="key-mono">${k.key} <button class="copy-btn" onclick="copyText('${k.key_full||k.key}')">⎘</button></td>
+            <td>${k.pool}</td>
+            <td>${statusBadge(k.status)}</td>
+            <td>${fmt(k.total_calls)}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteNexusKey(${k.id})">Del</button></td>
+        </tr>`
+    ).join('') : '<tr><td colspan="7" class="empty-state">No keys yet — create one above</td></tr>';
+}
+
+async function createNexusKey() {
+    const name = document.getElementById('keyName').value.trim();
+    const pool = document.getElementById('keyPool').value;
+    if (!name) return;
+    const res = await apiCall('/user/keys', { method:'POST', body:JSON.stringify({name,pool}) });
+    if (!res||!res.ok) return;
+    const k = await res.json();
+    document.getElementById('keyName').value='';
+    document.getElementById('newKeyValue').textContent = k.key;
+    document.getElementById('newKeyReveal').style.display='block';
+    loadNexusKeys();
+}
+
+async function deleteNexusKey(id) {
+    if (!confirm('Delete this key?')) return;
+    await apiCall('/user/keys/'+id, {method:'DELETE'});
+    loadNexusKeys();
+}
+
+async function loadUpstream() {
+    const res = await apiCall('/user/upstream');
+    if (!res||!res.ok) return;
+    allUpstreamKeys = await res.json() || [];
+    const tb = document.getElementById('upstreamTable');
+    tb.innerHTML = allUpstreamKeys.length ? allUpstreamKeys.map(k =>
+        `<tr>
+            <td>${k.id}</td>
+            <td>${k.name}</td>
+            <td>${k.provider}</td>
+            <td style="color:var(--muted);max-width:150px;overflow:hidden;text-overflow:ellipsis">${k.base_url||'(default)'}</td>
+            <td>${statusBadge(k.status)}</td>
+            <td>${fmt(k.total_calls)}</td>
+            <td><button class="btn btn-danger btn-sm" onclick="deleteUpstream(${k.id})">Del</button></td>
+        </tr>`
+    ).join('') : '<tr><td colspan="7" class="empty-state">No private keys — add one above</td></tr>';
+}
+
+async function addUpstreamKey() {
+    const name = document.getElementById('up_name').value.trim();
+    const key = document.getElementById('up_key').value.trim();
+    const provider = document.getElementById('up_provider').value;
+    const base_url = document.getElementById('up_base_url').value.trim();
+    if (!name||!key) { alert('Name and key are required'); return; }
+    const res = await apiCall('/user/upstream', {method:'POST', body:JSON.stringify({name,key,provider,base_url})});
+    if (res&&res.ok) { closeModal('addUpstreamModal'); loadUpstream(); }
+}
+
+async function deleteUpstream(id) {
+    if (!confirm('Delete this key?')) return;
+    await apiCall('/user/upstream/'+id, {method:'DELETE'});
+    loadUpstream();
+}
+
+async function loadUsage() {
+    await loadUserInfo();
+    const qg2 = document.getElementById('quotaGrid2');
+    if (userInfo) {
+        qg2.innerHTML = [
+            quotaCard(t('ql_total'), userInfo.tokens_used, userInfo.tokens_total),
+            quotaCard(t('ql_weekly'), userInfo.tokens_week_used, userInfo.tokens_weekly),
+            quotaCard(t('ql_monthly'), userInfo.tokens_month_used, userInfo.tokens_monthly),
+            quotaCard(t('ql_5h'), userInfo.tokens_5h_used, userInfo.tokens_5h)
+        ].join('');
+    }
+    const res = await apiCall('/user/stats');
+    if (!res||!res.ok) return;
+    const data = await res.json() || [];
+    const tb = document.getElementById('usageTable');
+    tb.innerHTML = data.length ? data.map(s =>
+        `<tr><td>${s.model}</td><td>${s.provider||'—'}</td><td>${fmt(s.total_calls)}</td><td>${fmt(s.total_tokens)}</td></tr>`
+    ).join('') : '<tr><td colspan="4" class="empty-state">No data yet</td></tr>';
+}
+
+async function loadEndpoint() {
+    const base = window.location.origin;
+    document.getElementById('endpointURL').textContent = base;
+    document.getElementById('chatEndpoint').textContent = base + '/v1/chat/completions';
+    document.getElementById('modelsEndpoint').textContent = base + '/v1/models';
+    // Try to fetch models list
+    try {
+        const nk = allNexusKeys[0];
+        if (nk) {
+            const res = await fetch('/v1/models', { headers: {'Authorization':'Bearer '+nk.key_full} });
+            if (res.ok) {
+                const d = await res.json();
+                const ml = document.getElementById('modelList');
+                ml.innerHTML = (d.data||[]).map(m =>
+                    `<span class="model-chip ${m.owned_by==='nexus-easter-egg'?'easter':''}">${m.id}</span>`
+                ).join('');
+            }
+        } else {
+            document.getElementById('modelList').innerHTML = '<span style="color:var(--muted);font-size:0.8rem">Create a NexusKey to view available models</span>';
+        }
+    } catch(_) {}
+}
+
+function copyText(t) {
+    navigator.clipboard.writeText(t).then(() => {}).catch(() => {});
+}
+
+function logout() { localStorage.clear(); window.location.href = BASE_PATH + '/'; }
+
+async function init() {
+    try {
+        const s = await fetch(BASE_PATH + '/api/settings');
+        const d = await s.json();
+        if (d.announcement) {
+            const el = document.getElementById('annoBanner');
+            el.textContent = d.announcement;
+            el.style.display='block';
+        }
+    } catch(_) {}
+    applyLang();
+    await loadUserInfo();
+    await loadStats();
+    loadNexusKeys();
+}
+
+init();
+
+function toggleSidebar() { const sb = document.querySelector('.sidebar'); const mo = document.getElementById('mobileOverlay'); if(sb){ sb.classList.toggle('open'); } if(mo){ mo.classList.toggle('open'); } }
+</script>
+</body>
+</html>

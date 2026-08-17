@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  nexus-api:
+    build: .
+    container_name: nexus-api
+    restart: unless-stopped
+    ports:
+      - "${PANEL_PORT:-8080}:8080"
+    volumes:
+      - ~/.nexus-api:/app/data
+    environment:
+      - TZ=Asia/Shanghai
+      - ADMIN_USER=${ADMIN_USER:-nexusapi}
+      - ADMIN_PASS=${ADMIN_PASS:-nexusapi}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

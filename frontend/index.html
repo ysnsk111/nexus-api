@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusAPI Flow — Sign In</title>
+    <meta name="description" content="NexusAPI Flow – Unified LLM API Key Management and Proxy Gateway">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #080e1a;
+            --surface: rgba(18, 28, 48, 0.85);
+            --border: rgba(148, 163, 184, 0.1);
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent2: #0ea5e9;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            color: var(--text);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Ambient background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 15% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 85% 80%, rgba(16, 185, 129, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 80% 40% at 50% 50%, rgba(14, 165, 233, 0.04) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .brand-logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+        .brand-logo em { color: var(--accent); font-style: normal; }
+        .brand-tagline {
+            margin-top: 0.4rem;
+            font-size: 0.75rem;
+            color: var(--muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 32px 64px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03) inset;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+
+        .announcement {
+            background: rgba(56, 189, 248, 0.08);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.8rem;
+            color: var(--accent);
+            margin-bottom: 1.25rem;
+            display: none;
+        }
+
+        .form-group { margin-bottom: 0.875rem; }
+        label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 0.4rem;
+        }
+        input {
+            width: 100%;
+            padding: 0.7rem 0.9rem;
+            background: rgba(8, 14, 26, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.875rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input::placeholder { color: #475569; }
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            letter-spacing: 0.02em;
+            margin-top: 1rem;
+            transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+            position: relative;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(14,165,233,0.35); }
+        .btn:active { transform: translateY(0); box-shadow: none; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            margin-top: 0.5rem;
+        }
+        .btn-ghost:hover { border-color: var(--accent); color: var(--accent); box-shadow: none; transform: none; }
+
+        .switch-mode {
+            margin-top: 1.25rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+        .switch-mode a {
+            color: var(--accent);
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .switch-mode a:hover { color: #7dd3fc; }
+
+        .error-msg {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 6px;
+            padding: 0.6rem 0.9rem;
+            font-size: 0.8rem;
+            color: #fca5a5;
+            margin-top: 0.75rem;
+            display: none;
+        }
+
+        .totp-field { display: none; }
+
+        .lang-bar {
+            display: flex;
+            justify-content: center;
+            gap: 0.4rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .lang-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+        .lang-btn:hover, .lang-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(56,189,248,0.06); }
+
+        .spinner {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.4rem;
+            vertical-align: middle;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: -260px; z-index: 1000; transition: left 0.3s; height: 100vh; }
+            .sidebar.open { left: 0; }
+            .mobile-menu-btn { display: inline-flex !important; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: var(--text); cursor: pointer; margin-right: 12px; }
+            .topbar { padding: 1rem; }
+            .content { padding: 1rem; }
+            .form-row, .quota-grid { grid-template-columns: 1fr; }
+            .brand { padding-top: 0.5rem; }
+        }
+        .mobile-menu-btn { display: none; }
+        .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); z-index: 999; opacity: 0; transition: opacity 0.3s; }
+        .mobile-overlay.open { display: block; opacity: 1; }
+
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="brand">
+        <div class="brand-logo">Nexus<em>API</em></div>
+        <div class="brand-tagline" id="tagline">Unified LLM Gateway</div>
+    </div>
+
+    <!-- Login Panel -->
+    <div class="card" id="loginPanel">
+        <div class="announcement" id="announcement"></div>
+        <div class="card-title" id="titleLogin">Sign In</div>
+        <div class="form-group">
+            <label id="lbUser">Username</label>
+            <input id="l_username" type="text" autocomplete="username" id="l_username">
+        </div>
+        <div class="form-group">
+            <label id="lbPass">Password</label>
+            <input id="l_password" type="password" autocomplete="current-password">
+        </div>
+        <div class="form-group totp-field" id="totpField">
+            <label id="lbTotp">Authenticator Code</label>
+            <input id="l_totp" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000">
+        </div>
+        <div class="error-msg" id="loginErr"></div>
+        <button class="btn" id="loginBtn" onclick="login()">
+            <span class="spinner" id="loginSpinner"></span>
+            <span id="loginBtnText">Sign In</span>
+        </button>
+        <div class="switch-mode" id="switchToReg">
+            <span id="noAccText">Don't have an account?</span> <a onclick="show('reg')" id="createAccLink">Create account →</a>
+        </div>
+    </div>
+
+    <!-- Register Panel -->
+    <div class="card" id="regPanel" style="display:none">
+        <div class="card-title" id="titleReg">Create Account</div>
+        <div class="form-group">
+            <label id="lbRegUser">Username</label>
+            <input id="r_username" type="text" autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label id="lbRegEmail">Email</label>
+            <input id="r_email" type="email" autocomplete="email">
+        </div>
+        <div class="form-group">
+            <label id="lbRegPass">Password</label>
+            <input id="r_password" type="password" autocomplete="new-password">
+        </div>
+        <div class="error-msg" id="regErr"></div>
+        <button class="btn" id="regBtn" onclick="register()">
+            <span class="spinner" id="regSpinner"></span>
+            <span id="regBtnText">Register</span>
+        </button>
+        <button class="btn btn-ghost" onclick="show('login')" id="backLoginBtn">← Back to Login</button>
+    </div>
+
+    <!-- Language selector -->
+    <div class="lang-bar">
+        <button class="lang-btn" onclick="setLang('zh')">中文</button>
+        <button class="lang-btn" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('ja')">日本語</button>
+        <button class="lang-btn" onclick="setLang('ru')">Русский</button>
+        <button class="lang-btn" onclick="setLang('ko')">한국어</button>
+        <button class="lang-btn" onclick="setLang('fr')">Français</button>
+        <button class="lang-btn" onclick="setLang('es')">Español</button>
+    </div>
+</div>
+
+<script>
+const BASE_PATH = window.location.pathname.replace(/\/(admin(\/settings)?|dashboard|user(\/settings)?)\/?$/, '').replace(/\/$/, '') || '';
+// ─── i18n ─────────────────────────────────────────────────────────────────────
+const I18N = {
+    en: {
+        tagline: 'Unified LLM Gateway',
+        titleLogin: 'Sign In', titleReg: 'Create Account',
+        lbUser: 'Username', lbPass: 'Password', lbTotp: 'Authenticator Code',
+        lbRegUser: 'Username', lbRegEmail: 'Email', lbRegPass: 'Password',
+        loginBtnText: 'Sign In', regBtnText: 'Register', backLoginBtn: '← Back to Login',
+        noAccText: "Don't have an account?", createAccLink: 'Create account →',
+        switchToLogin: 'Already have an account?'
+    },
+    zh: {
+        tagline: '统一 LLM 网关',
+        titleLogin: '登录', titleReg: '创建账户',
+        lbUser: '用户名', lbPass: '密码', lbTotp: '验证码',
+        lbRegUser: '用户名', lbRegEmail: '邮箱', lbRegPass: '密码',
+        loginBtnText: '登录', regBtnText: '注册', backLoginBtn: '← 返回登录',
+        noAccText: '还没有账户？', createAccLink: '立即注册 →',
+        switchToLogin: '已有账户？'
+    },
+    ja: {
+        tagline: '統合 LLM ゲートウェイ',
+        titleLogin: 'サインイン', titleReg: 'アカウント作成',
+        lbUser: 'ユーザー名', lbPass: 'パスワード', lbTotp: '認証コード',
+        lbRegUser: 'ユーザー名', lbRegEmail: 'メール', lbRegPass: 'パスワード',
+        loginBtnText: 'サインイン', regBtnText: '登録', backLoginBtn: '← ログインに戻る',
+        noAccText: 'アカウントをお持ちでないですか？', createAccLink: '作成 →',
+        switchToLogin: 'すでにアカウントをお持ちですか？'
+    },
+    ru: {
+        tagline: 'Единый LLM шлюз',
+        titleLogin: 'Войти', titleReg: 'Создать аккаунт',
+        lbUser: 'Логин', lbPass: 'Пароль', lbTotp: 'Код аутентификации',
+        lbRegUser: 'Логин', lbRegEmail: 'Email', lbRegPass: 'Пароль',
+        loginBtnText: 'Войти', regBtnText: 'Зарегистрироваться', backLoginBtn: '← Назад',
+        noAccText: 'Нет аккаунта?', createAccLink: 'Создать →',
+        switchToLogin: 'Уже есть аккаунт?'
+    },
+    ko: {
+        tagline: '통합 LLM 게이트웨이',
+        titleLogin: '로그인', titleReg: '계정 만들기',
+        lbUser: '사용자명', lbPass: '비밀번호', lbTotp: '인증 코드',
+        lbRegUser: '사용자명', lbRegEmail: '이메일', lbRegPass: '비밀번호',
+        loginBtnText: '로그인', regBtnText: '가입', backLoginBtn: '← 로그인으로',
+        noAccText: '계정이 없으신가요?', createAccLink: '계정 만들기 →',
+        switchToLogin: '이미 계정이 있으신가요?'
+    },
+    fr: {
+        tagline: 'Passerelle LLM unifiée',
+        titleLogin: 'Connexion', titleReg: 'Créer un compte',
+        lbUser: "Nom d'utilisateur", lbPass: 'Mot de passe', lbTotp: "Code d'authentification",
+        lbRegUser: "Nom d'utilisateur", lbRegEmail: 'Email', lbRegPass: 'Mot de passe',
+        loginBtnText: 'Se connecter', regBtnText: "S'inscrire", backLoginBtn: '← Retour',
+        noAccText: 'Pas de compte ?', createAccLink: 'Créer →',
+        switchToLogin: 'Vous avez déjà un compte ?'
+    },
+    es: {
+        tagline: 'Puerta de enlace LLM unificada',
+        titleLogin: 'Iniciar sesión', titleReg: 'Crear cuenta',
+        lbUser: 'Usuario', lbPass: 'Contraseña', lbTotp: 'Código de autenticación',
+        lbRegUser: 'Usuario', lbRegEmail: 'Correo', lbRegPass: 'Contraseña',
+        loginBtnText: 'Iniciar sesión', regBtnText: 'Registrarse', backLoginBtn: '← Volver',
+        noAccText: '¿No tienes cuenta?', createAccLink: 'Crear cuenta →',
+        switchToLogin: '¿Ya tienes cuenta?'
+    }
+};
+
+let LANG = localStorage.getItem('lang') || 'en';
+function t(k) { return (I18N[LANG] && I18N[LANG][k]) || I18N.en[k] || k; }
+
+function setLang(l) {
+    LANG = l;
+    localStorage.setItem('lang', l);
+    applyLang();
+}
+
+function applyLang() {
+    const keys = ['tagline','titleLogin','titleReg','lbUser','lbPass','lbTotp','lbRegUser','lbRegEmail','lbRegPass','loginBtnText','regBtnText','backLoginBtn','noAccText','createAccLink'];
+    keys.forEach(k => {
+        const el = document.getElementById(k);
+        if (el) el.textContent = t(k);
+    });
+    document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+    const activeLang = document.querySelector(`.lang-btn[onclick="setLang('${LANG}')"]`);
+    if (activeLang) activeLang.classList.add('active');
+}
+
+function show(panel) {
+    document.getElementById('loginPanel').style.display = panel === 'login' ? '' : 'none';
+    document.getElementById('regPanel').style.display = panel === 'reg' ? '' : 'none';
+}
+
+function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 5000);
+}
+
+async function login() {
+    const username = document.getElementById('l_username').value.trim();
+    const password = document.getElementById('l_password').value;
+    const code = document.getElementById('l_totp').value;
+    if (!username || !password) { showError('loginErr', 'Please fill in all fields'); return; }
+
+    document.getElementById('loginBtn').disabled = true;
+    document.getElementById('loginSpinner').style.display = 'inline-block';
+
+    const res = await fetch(BASE_PATH + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, code })
+    });
+    const data = await res.json();
+
+    document.getElementById('loginBtn').disabled = false;
+    document.getElementById('loginSpinner').style.display = 'none';
+
+    if (data.require_totp) {
+        document.getElementById('totpField').style.display = 'block';
+        document.getElementById('l_totp').focus();
+        showError('loginErr', 'Enter your 2FA code');
+        return;
+    }
+    if (!res.ok) { showError('loginErr', data.error || 'Login failed'); return; }
+
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('role', data.role);
+    window.location.href = data.role === 'admin' ? BASE_PATH + '/admin' : BASE_PATH + '/dashboard';
+}
+
+async function register() {
+    const username = document.getElementById('r_username').value.trim();
+    const email = document.getElementById('r_email').value.trim();
+    const password = document.getElementById('r_password').value;
+    if (!username || !email || !password) { showError('regErr', 'All fields are required'); return; }
+
+    document.getElementById('regBtn').disabled = true;
+    document.getElementById('regSpinner').style.display = 'inline-block';
+
+    const res = await fetch(BASE_PATH + '/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+
+    document.getElementById('regBtn').disabled = false;
+    document.getElementById('regSpinner').style.display = 'none';
+
+    if (!res.ok) { showError('regErr', data.error || 'Registration failed'); return; }
+    show('login');
+    document.getElementById('loginErr').style.display = 'none';
+    // show success briefly in login error area
+    const el = document.getElementById('loginErr');
+    el.style.background = 'rgba(16,185,129,0.1)';
+    el.style.borderColor = 'rgba(16,185,129,0.25)';
+    el.style.color = '#6ee7b7';
+    el.textContent = 'Registration successful! Please sign in.';
+    el.style.display = 'block';
+    setTimeout(() => {
+        el.style.display = 'none';
+        el.style.background = '';
+        el.style.borderColor = '';
+        el.style.color = '';
+    }, 4000);
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        const regVisible = document.getElementById('regPanel').style.display !== 'none';
+        regVisible ? register() : login();
+    }
+});
+
+// Load announcement
+async function loadSettings() {
+    try {
+        const res = await fetch(BASE_PATH + '/api/settings');
+        const data = await res.json();
+        if (data.announcement) {
+            const el = document.getElementById('announcement');
+            el.textContent = data.announcement;
+            el.style.display = 'block';
+        }
+        if (data.registration_enabled === 'false') {
+            document.getElementById('switchToReg').style.display = 'none';
+        }
+    } catch(_) {}
+}
+
+// Redirect if already logged in
+if (localStorage.getItem('token')) {
+    const role = localStorage.getItem('role');
+    window.location.href = role === 'admin' ? BASE_PATH + '/admin' : BASE_PATH + '/dashboard';
+}
+
+applyLang();
+loadSettings();
+
+function toggleSidebar() { const sb = document.querySelector('.sidebar'); const mo = document.getElementById('mobileOverlay'); if(sb){ sb.classList.toggle('open'); } if(mo){ mo.classList.toggle('open'); } }
+</script>
+</body>
+</html>
