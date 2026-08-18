@@ -19,8 +19,10 @@ type User struct {
 	TokensUsed     int64 `gorm:"default:0"`   // Total tokens used
 	TokensWeekly   int64 `gorm:"default:-1"`  // Weekly quota (-1 = unlimited)
 	TokensWeekUsed int64 `gorm:"default:0"`   // Used this week
+	TokensWeekReset int64 `gorm:"default:0"`  // Unix timestamp of weekly window start
 	TokensMonthly  int64 `gorm:"default:-1"`  // Monthly quota (-1 = unlimited)
 	TokensMonthUsed int64 `gorm:"default:0"`  // Used this month
+	TokensMonthReset int64 `gorm:"default:0"` // Unix timestamp of monthly window start
 	Tokens5h       int64 `gorm:"default:-1"`  // 5-hour quota (-1 = unlimited)
 	Tokens5hUsed   int64 `gorm:"default:0"`   // Used in last 5 hours
 	Tokens5hReset  int64 `gorm:"default:0"`   // Unix timestamp of 5h window start

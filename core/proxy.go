@@ -84,15 +84,42 @@ func ProxyHandler(c *gin.Context) {
 			return
 		}
 	}
-	// Check weekly quota (simple: reset if > 7 days since last weekly reset - tracked via 5h reset approach not perfect but functional)
-	if user.TokensWeekly >= 0 && user.TokensWeekUsed >= user.TokensWeekly {
-		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Weekly token quota exceeded"})
-		return
+	// Check weekly quota
+	// Use beginning of current week (Monday)
+	y, w := time.Unix(now, 0).ISOWeek()
+	if user.TokensWeekly >= 0 {
+		wy, ww := time.Unix(user.TokensWeekReset, 0).ISOWeek()
+		if y != wy || w != ww {
+			models.DB.Model(&user).Updates(map[string]interface{}{
+				"tokens_week_used":  0,
+				"tokens_week_reset": now,
+			})
+			user.TokensWeekUsed = 0
+			user.TokensWeekReset = now
+		}
+		if user.TokensWeekUsed >= user.TokensWeekly {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Weekly token quota exceeded"})
+			return
+		}
 	}
+
 	// Check monthly quota
-	if user.TokensMonthly >= 0 && user.TokensMonthUsed >= user.TokensMonthly {
-		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Monthly token quota exceeded"})
-		return
+	// Use beginning of current month
+	m := time.Unix(now, 0).Month()
+	if user.TokensMonthly >= 0 {
+		wm := time.Unix(user.TokensMonthReset, 0).Month()
+		if m != wm {
+			models.DB.Model(&user).Updates(map[string]interface{}{
+				"tokens_month_used":  0,
+				"tokens_month_reset": now,
+			})
+			user.TokensMonthUsed = 0
+			user.TokensMonthReset = now
+		}
+		if user.TokensMonthUsed >= user.TokensMonthly {
+			c.JSON(http.StatusTooManyRequests, gin.H{"error": "Monthly token quota exceeded"})
+			return
+		}
 	}
 
 	// Read body
@@ -267,12 +294,12 @@ func ProxyHandler(c *gin.Context) {
 		// Count tokens from streaming or non-streaming response
 		var tokensUsed int64
 		if req.Stream {
-			tokensUsed = streamAndCount(c.Writer, resp.Body)
+			tokensUsed = streamAndCount(c.Writer, resp.Body, len(body))
 		} else {
 			respBody, _ := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			c.Writer.Write(respBody)
-			tokensUsed = extractTokensFromResponse(respBody)
+			tokensUsed = extractTokensFromResponse(respBody, len(body))
 		}
 
 		// Update user token usage
@@ -289,12 +316,14 @@ func ProxyHandler(c *gin.Context) {
 }
 
 // streamAndCount proxies an SSE stream and tries to count tokens from the final usage chunk.
-func streamAndCount(w gin.ResponseWriter, body io.ReadCloser) int64 {
+func streamAndCount(w gin.ResponseWriter, body io.ReadCloser, inputBodyLen int) int64 {
 	defer body.Close()
 	var totalTokens int64
+	var outputBytes int
 	scanner := bufio.NewScanner(body)
 	for scanner.Scan() {
 		line := scanner.Text()
+		outputBytes += len(line)
 		w.Write([]byte(line + "\n"))
 		if flusher, ok := w.(http.Flusher); ok {
 			flusher.Flush()
@@ -315,23 +344,26 @@ func streamAndCount(w gin.ResponseWriter, body io.ReadCloser) int64 {
 			}
 		}
 	}
+	if totalTokens == 0 {
+		totalTokens = int64(inputBodyLen/3 + outputBytes/3)
+	}
 	return totalTokens
 }
 
 // extractTokensFromResponse parses token usage from a non-streaming JSON response.
-func extractTokensFromResponse(body []byte) int64 {
+func extractTokensFromResponse(body []byte, inputBodyLen int) int64 {
 	var resp map[string]interface{}
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return 0
+		return int64(inputBodyLen/3 + len(body)/3)
 	}
 	usage, ok := resp["usage"].(map[string]interface{})
 	if !ok {
-		return 0
+		return int64(inputBodyLen/3 + len(body)/3)
 	}
 	if tt, ok := usage["total_tokens"].(float64); ok {
 		return int64(tt)
 	}
-	return 0
+	return int64(inputBodyLen/3 + len(body)/3)
 }
 
 // updateUserTokenUsage increments all quota counters for a user.

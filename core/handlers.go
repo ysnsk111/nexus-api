@@ -541,10 +541,12 @@ func DeleteUserHandler(c *gin.Context) {
 func ResetUserQuotasHandler(c *gin.Context) {
 	id := c.Param("id")
 	models.DB.Model(&models.User{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"tokens_week_used":  0,
-		"tokens_month_used": 0,
-		"tokens5h_used":     0,
-		"tokens5h_reset":    0,
+		"tokens_week_used":   0,
+		"tokens_week_reset":  time.Now().Unix(),
+		"tokens_month_used":  0,
+		"tokens_month_reset": time.Now().Unix(),
+		"tokens5h_used":      0,
+		"tokens5h_reset":     0,
 	})
 	c.JSON(http.StatusOK, gin.H{"message": "Quotas reset"})
 }

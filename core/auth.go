@@ -97,6 +97,11 @@ func ProxyAuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		if nexusKey.Status != "active" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "API key is disabled"})
+			return
+		}
+
 		c.Set("userID", nexusKey.UserID)
 		c.Set("pool", nexusKey.Pool)
 		c.Set("nexusKeyID", nexusKey.ID)
